@@ -3,6 +3,7 @@ package com.example.mypdaviesapp.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.mypdaviesapp.converter.Converters
 import com.example.mypdaviesapp.dao.BarcodeDao
 import com.example.mypdaviesapp.dao.CleaningHistoryDao
 import com.example.mypdaviesapp.dao.ClientDao
