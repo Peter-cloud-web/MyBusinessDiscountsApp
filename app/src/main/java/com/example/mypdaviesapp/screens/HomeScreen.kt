@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.mypdaviesapp.ui.components.ActionCard
+import com.example.mypdaviesapp.ui.components.ClientListItem
+import com.example.mypdaviesapp.ui.components.StatItem
 import com.example.mypdaviesapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
