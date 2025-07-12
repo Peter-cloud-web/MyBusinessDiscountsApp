@@ -2,14 +2,15 @@ package com.example.mypdaviesapp.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
+
 
 object BarcodeGenerator {
     fun generateBarcodeBitmap(content: String, width: Int = 200, height: Int = 100): Bitmap? {
         return try {
             val writer = MultiFormatWriter()
-            val bitMatrix = writer.encode(content, Barcode.FORMAT_CODE_128, width, height)
+            val bitMatrix = writer.encode(content, BarcodeFormat.CODE_128, width, height)
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
 
             for (x in 0 until width) {

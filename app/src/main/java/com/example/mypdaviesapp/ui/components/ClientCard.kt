@@ -52,7 +52,7 @@ fun ClientCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "Last visit: ${formatDate(client.lastVisit)}",
+                        "Last visit: ${(client.lastVisit)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

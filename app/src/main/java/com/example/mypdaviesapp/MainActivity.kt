@@ -1,4 +1,4 @@
-package com.example.mypdaviesapp.activities
+package com.example.mypdaviesapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.example.mypdaviesapp.ui.components.CarpetCleaningApp
+import com.example.mypdaviesapp.nav.CarpetCleaningApp
 import com.example.mypdaviesapp.ui.theme.CarpetCleaningTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CarpetCleaningTheme {
-                Surface(
+                Surface (
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {

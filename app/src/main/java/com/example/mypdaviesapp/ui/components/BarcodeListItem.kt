@@ -37,7 +37,7 @@ fun BarcodeListItem(barcode: Barcode) {
             )
 
             Text(
-                "Created: ${formatDate(barcode.createdAt)}",
+                "Created: ${(barcode.createdAt)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -33,9 +36,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -45,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mypdaviesapp.viewmodel.MainViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,10 +69,36 @@ fun ScanBarcodeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    // Handle barcode scanned from camera
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("scanned_barcode")?.observeForever { barcode ->
+            barcode?.let {
+                scannedCode = it
+                manualCode = it
+
+                // Clear the saved state to prevent re-processing
+                navController.currentBackStackEntry?.savedStateHandle?.remove<String>("scanned_barcode")
+
+                if (isAssignMode) {
+                    showAssignDialog = true
+                } else {
+                    viewModel.scanBarcode(it)
+                    showScanResult = true
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scan Barcode") },
+                title = {
+                    Text(
+                        "Scan Barcode",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -90,7 +121,10 @@ fun ScanBarcodeScreen(
         ) {
             // Mode Selection
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -101,6 +135,12 @@ fun ScanBarcodeScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        if (isAssignMode) "Assign new barcode tags to clients" else "Record cleaning service for existing clients",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -122,17 +162,16 @@ fun ScanBarcodeScreen(
                 }
             }
 
-            // Camera Scanner (Placeholder)
+            // Camera Scanner
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(180.dp)
                     .clickable {
-                        // TODO: Implement camera scanner
-                        Toast.makeText(context, "Camera scanner will be implemented here", Toast.LENGTH_SHORT).show()
+                        navController.navigate("camera_scanner/$isAssignMode")
                     },
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
                 )
             ) {
                 Box(
@@ -140,7 +179,8 @@ fun ScanBarcodeScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
                             Icons.Default.CameraAlt,
@@ -148,11 +188,16 @@ fun ScanBarcodeScreen(
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Tap to open camera scanner",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            "📱 Tap to open camera scanner",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Text(
+                            "Supports QR codes, barcodes, and more",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                 }
@@ -177,6 +222,7 @@ fun ScanBarcodeScreen(
                         onValueChange = { manualCode = it },
                         label = { Text("Enter barcode") },
                         modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("e.g., CC123456789") },
                         trailingIcon = {
                             IconButton(
                                 onClick = {
@@ -196,7 +242,7 @@ fun ScanBarcodeScreen(
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
                         onClick = {
@@ -218,6 +264,8 @@ fun ScanBarcodeScreen(
                                 modifier = Modifier.size(16.dp),
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Processing...")
                         } else {
                             Text(if (isAssignMode) "Assign Barcode" else "Record Cleaning")
                         }
@@ -255,11 +303,38 @@ fun ScanBarcodeScreen(
                         OutlinedButton(
                             onClick = {
                                 manualCode = ""
+                                scannedCode = ""
                             },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Clear")
                         }
+                    }
+                }
+            }
+
+            // Show last scanned info if available
+            if (scannedCode.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            "✅ Last Scanned",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            scannedCode,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -270,32 +345,59 @@ fun ScanBarcodeScreen(
     if (showAssignDialog) {
         AlertDialog(
             onDismissRequest = { showAssignDialog = false },
-            title = { Text("Assign Barcode to Client") },
+            title = {
+                Text(
+                    "Assign Barcode to Client",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
             text = {
                 Column {
-                    Text("Barcode: $scannedCode")
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            Text(
+                                "Barcode:",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                scannedCode,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     OutlinedTextField(
                         value = clientName,
                         onValueChange = { clientName = it },
                         label = { Text("Client Name") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Enter client's full name") }
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     OutlinedTextField(
                         value = clientPhone,
                         onValueChange = { clientPhone = it },
                         label = { Text("Phone Number") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        placeholder = { Text("e.g., +254712345678") }
                     )
                 }
             },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         if (clientName.isNotEmpty() && clientPhone.isNotEmpty()) {
                             viewModel.assignBarcode(scannedCode, clientName, clientPhone)
@@ -303,6 +405,8 @@ fun ScanBarcodeScreen(
                             clientName = ""
                             clientPhone = ""
                             manualCode = ""
+                            scannedCode = ""
+                            Toast.makeText(context, "✅ Barcode assigned successfully!", Toast.LENGTH_SHORT).show()
                         }
                     },
                     enabled = clientName.isNotEmpty() && clientPhone.isNotEmpty()
@@ -311,7 +415,11 @@ fun ScanBarcodeScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAssignDialog = false }) {
+                TextButton(onClick = {
+                    showAssignDialog = false
+                    clientName = ""
+                    clientPhone = ""
+                }) {
                     Text("Cancel")
                 }
             }
@@ -326,39 +434,65 @@ fun ScanBarcodeScreen(
                     showScanResult = false
                     viewModel.clearScanResult()
                     manualCode = ""
+                    scannedCode = ""
                 },
                 title = {
                     Text(
-                        if (result.isDiscountEligible) "Discount Eligible!" else "Cleaning Recorded",
+                        if (result.isDiscountEligible) "🎉 Discount Eligible!" else "✅ Cleaning Recorded",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
                         color = if (result.isDiscountEligible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                 },
                 text = {
                     Column {
-                        Text("Client: ${result.client.name}")
-                        Text("Phone: ${result.client.phoneNumber}")
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp)
+                            ) {
+                                Text("Client: ${result.client.name}")
+                                Text("Phone: ${result.client.phoneNumber}")
+                                Text("Barcode: $scannedCode")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         if (result.isDiscountEligible) {
-                            Text(
-                                "🎉 ${result.discountPercentage}% Discount Applied!",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text("Scan count has been reset to 0")
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp)
+                                ) {
+                                    Text(
+                                        "🎉 ${result.discountPercentage}% Discount Applied!",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text("Scan count has been reset to 0")
+                                }
+                            }
                         } else {
                             Text("Scan count: ${result.scanCount}/10")
-                            Text("${10 - result.scanCount} more scans for discount")
+                            Text("${10 - result.scanCount} more scans needed for discount")
                         }
                     }
                 },
                 confirmButton = {
-                    TextButton(
+                    Button(
                         onClick = {
                             showScanResult = false
                             viewModel.clearScanResult()
                             manualCode = ""
+                            scannedCode = ""
                         }
                     ) {
                         Text("OK")

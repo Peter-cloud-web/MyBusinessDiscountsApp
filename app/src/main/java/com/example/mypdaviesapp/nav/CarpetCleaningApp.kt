@@ -1,9 +1,16 @@
-package com.example.mypdaviesapp.ui.components
+package com.example.mypdaviesapp.nav
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHost
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.carpetcleaning.app.ui.screens.ClientDetailScreen
+import com.example.mypdaviesapp.screens.CameraScannerScreen
+import com.example.mypdaviesapp.screens.ClientsScreen
+import com.example.mypdaviesapp.screens.GenerateBarcodesScreen
 import com.example.mypdaviesapp.screens.HomeScreen
+import com.example.mypdaviesapp.screens.ScanBarcodeScreen
 
 @Composable
 fun CarpetCleaningApp() {
@@ -22,7 +29,11 @@ fun CarpetCleaningApp() {
         composable("scan_barcode") {
             ScanBarcodeScreen(navController)
         }
-        compo cv '  sable("clients") {
+        composable("camera_scanner/{isAssignMode}") { backStackEntry ->
+            val isAssignMode = backStackEntry.arguments?.getString("isAssignMode")?.toBoolean() ?: false
+            CameraScannerScreen(navController, isAssignMode)
+        }
+        composable("clients") {
             ClientsScreen(navController)
         }
         composable("client_detail/{clientId}") { backStackEntry ->

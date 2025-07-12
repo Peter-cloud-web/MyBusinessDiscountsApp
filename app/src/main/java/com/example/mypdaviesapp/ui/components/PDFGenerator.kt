@@ -1,6 +1,8 @@
 package com.example.mypdaviesapp.ui.components
 
 import android.content.Context
+import android.content.Intent
+import android.media.MediaScannerConnection
 import android.os.Environment
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -17,7 +19,15 @@ class PDFGenerator(private val context: Context) {
 
     fun generateBarcodePDF(barcodes: List<String>, businessName: String = "Carpet Cleaning Pro"): String? {
         return try {
-            val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "barcodes_${System.currentTimeMillis()}.pdf")
+            // Create the file in the public Documents directory
+            val documentsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "CarpetCleaningPro")
+            if (!documentsDir.exists()) {
+                documentsDir.mkdirs()
+            }
+
+            val fileName = "barcodes_${System.currentTimeMillis()}.pdf"
+            val file = File(documentsDir, fileName)
+
             val pdfWriter = PdfWriter(file)
             val pdfDocument = PdfDocument(pdfWriter)
             val document = Document(pdfDocument)
@@ -51,9 +61,42 @@ class PDFGenerator(private val context: Context) {
             document.add(table)
             document.close()
 
+            // Make the file visible to media scanner and file managers
+            MediaScannerConnection.scanFile(
+                context,
+                arrayOf(file.absolutePath),
+                arrayOf("application/pdf"),
+                null
+            )
+
+            // Also notify the system about the new file
+            val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
+            mediaScanIntent.data = android.net.Uri.fromFile(file)
+            context.sendBroadcast(mediaScanIntent)
+
             file.absolutePath
         } catch (e: Exception) {
+            e.printStackTrace() // This will help you debug if there are any issues
             null
+        }
+    }
+
+    fun shareBarcodePDF(filePath: String) {
+        try {
+            val file = File(filePath)
+            if (file.exists()) {
+                val shareIntent = Intent(Intent.ACTION_SEND)
+                shareIntent.type = "application/pdf"
+                shareIntent.putExtra(Intent.EXTRA_STREAM, android.net.Uri.fromFile(file))
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Carpet Cleaning Barcodes")
+                shareIntent.putExtra(Intent.EXTRA_TEXT, "Generated carpet cleaning barcode tags")
+
+                val chooserIntent = Intent.createChooser(shareIntent, "Share Barcode PDF")
+                chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooserIntent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

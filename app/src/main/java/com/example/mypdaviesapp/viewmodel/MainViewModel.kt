@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val repository: CarpetCleaningRepository
+    val repository: CarpetCleaningRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
