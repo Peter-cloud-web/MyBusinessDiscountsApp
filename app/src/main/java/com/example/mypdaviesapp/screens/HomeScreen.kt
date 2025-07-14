@@ -1,40 +1,32 @@
 package com.example.mypdaviesapp.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.mypdaviesapp.ui.components.ActionCard
 import com.example.mypdaviesapp.ui.components.ClientListItem
-import com.example.mypdaviesapp.ui.components.StatItem
 import com.example.mypdaviesapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,134 +39,314 @@ fun HomeScreen(
     val clients by viewModel.clients.collectAsState()
     val unassignedBarcodes by viewModel.unassignedBarcodes.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Carpet Cleaning Loyalty",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    ) { paddingValues ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .verticalScroll(rememberScrollState())
+                .padding(10.dp)
         ) {
-            // Quick Stats
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+            // Header with gradient background
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 24.dp, vertical = 32.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                Column {
                     Text(
-                        "Quick Stats",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        "Welcome Back",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4A154B)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        StatItem("Total Clients", clients.size.toString())
-                        StatItem("Unassigned Tags", unassignedBarcodes.size.toString())
-                        StatItem("Active Discounts", clients.count { it.totalCleanings >= 10 }.toString())
+                    Text(
+                        "Here's your business overview",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color(0xFF8B0000)
+                    )
+                }
+            }
+
+            // Enhanced Stats Cards
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Primary Stats Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ProfessionalStatCard(
+                        title = "Total Clients",
+                        value = clients.size.toString(),
+                        subtitle = "Active customers",
+                        icon = Icons.Default.People,
+                        modifier = Modifier.weight(1f)
+                    )
+                    ProfessionalStatCard(
+                        title = "Unassigned Tags",
+                        value = unassignedBarcodes.size.toString(),
+                        subtitle = "Available tags",
+                        icon = Icons.Default.QrCode,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Secondary Stats
+                ProfessionalStatCard(
+                    title = "Active Loyalty Members",
+                    value = clients.count { it.totalCleanings >= 10 }.toString(),
+                    subtitle = "Customers eligible for discounts",
+                    icon = Icons.Default.TrendingUp,
+                    modifier = Modifier.fillMaxWidth(),
+                    isHighlighted = true
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Section Header
+                Text(
+                    "Quick Actions",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4A154B),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Enhanced Action Grid
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.height(280.dp)
+                ) {
+                    item {
+                        ProfessionalActionCard(
+                            title = "Generate Barcodes",
+                            description = "Create new barcode tags",
+                            icon = Icons.Default.QrCode,
+                            onClick = { navController.navigate("generate_barcodes") }
+                        )
+                    }
+                    item {
+                        ProfessionalActionCard(
+                            title = "Scan Barcode",
+                            description = "Scan carpet tags",
+                            icon = Icons.Default.CameraAlt,
+                            onClick = { navController.navigate("scan_barcode") }
+                        )
+                    }
+                    item {
+                        ProfessionalActionCard(
+                            title = "Client Management",
+                            description = "Manage profiles",
+                            icon = Icons.Default.People,
+                            onClick = { navController.navigate("clients") }
+                        )
+                    }
+                    item {
+                        ProfessionalActionCard(
+                            title = "Analytics",
+                            description = "View reports",
+                            icon = Icons.Default.Analytics,
+                            onClick = { /* TODO: Navigate to reports */ }
+                        )
                     }
                 }
-            }
 
-            // Action Buttons
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    ActionCard(
-                        title = "Generate Barcodes",
-                        description = "Create new barcode tags",
-                        icon = Icons.Default.QrCode,
-                        onClick = { navController.navigate("generate_barcodes") }
-                    )
-                }
-                item {
-                    ActionCard(
-                        title = "Scan Barcode",
-                        description = "Scan carpet tags",
-                        icon = Icons.Default.CameraAlt,
-                        onClick = { navController.navigate("scan_barcode") }
-                    )
-                }
-                item {
-                    ActionCard(
-                        title = "View Clients",
-                        description = "Manage client profiles",
-                        icon = Icons.Default.People,
-                        onClick = { navController.navigate("clients") }
-                    )
-                }
-                item {
-                    ActionCard(
-                        title = "Reports",
-                        description = "View statistics",
-                        icon = Icons.Default.Analytics,
-                        onClick = { /* TODO: Navigate to reports */ }
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Recent Activity
-            if (clients.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+                // Recent Activity Section
+                if (clients.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text(
-                            "Recent Clients",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        clients.take(3).forEach { client ->
-                            ClientListItem(
-                                client = client,
-                                onClick = { navController.navigate("client_detail/${client.id}") }
-                            )
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "Recent Clients",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF4A154B)
+                                )
+                                TextButton(
+                                    onClick = { navController.navigate("clients") }
+                                ) {
+                                    Text("View All")
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            clients.take(3).forEach { client ->
+                                ClientListItem(
+                                    client = client,
+                                    onClick = { navController.navigate("client_detail/${client.id}") }
+                                )
+                            }
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
 
-        // Show messages
+        // Handle messages
         uiState.message?.let { message ->
             LaunchedEffect(message) {
-                // Show snackbar or toast
                 viewModel.clearMessage()
             }
         }
 
         uiState.error?.let { error ->
             LaunchedEffect(error) {
-                // Show error message
                 viewModel.clearMessage()
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfessionalStatCard(
+    title: String,
+    value: String,
+    subtitle: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    isHighlighted: Boolean = false
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isHighlighted)
+                Color(0xFFE8E4F0)
+            else
+                Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF8B0000),
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        value,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isHighlighted)
+                            Color(0xFF4A154B)
+                        else
+                            Color(0xFF2C3E50)
+                    )
+                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isHighlighted)
+                        Color(0xFF4A154B)
+                    else
+                        Color(0xFF8B0000),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF95A5A6)
+            )
+        }
+    }
+}
+
+@Composable
+fun ProfessionalActionCard(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4A154B)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF8B0000)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
