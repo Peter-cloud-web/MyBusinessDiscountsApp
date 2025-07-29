@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "975073747725",
+    "project_id": "pdavies-cleaning",
+    "storage_bucket": "pdavies-cleaning.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:975073747725:android:b8c47cb5417f9377220644",
+        "android_client_info": {
+          "package_name": "com.example.mypdaviesapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYS68inz9kPJNxAuI2gSvfjfZ0MDbeazQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,49 +1,26 @@
 package com.example.mypdaviesapp.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -89,254 +66,399 @@ fun ScanBarcodeScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Scan Barcode",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    ) { paddingValues ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .verticalScroll(rememberScrollState())
+                .padding(10.dp)
         ) {
-            // Mode Selection
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        "Scan Mode",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        if (isAssignMode) "Assign new barcode tags to clients" else "Record cleaning service for existing clients",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            onClick = { isAssignMode = false },
-                            label = { Text("Record Cleaning") },
-                            selected = !isAssignMode,
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            onClick = { isAssignMode = true },
-                            label = { Text("Assign to Client") },
-                            selected = isAssignMode,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
-
-            // Camera Scanner
-            Card(
+            // Header Section
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .clickable {
-                        navController.navigate("camera_scanner/$isAssignMode")
-                    },
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
+                    .background(Color.White)
+                    .padding(horizontal = 24.dp, vertical = 32.dp)
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    IconButton(
+                        onClick = { navController.navigateUp() },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                Color(0xFFE8E4F0),
+                                RoundedCornerShape(8.dp)
+                            )
                     ) {
                         Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF4A154B)
                         )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column {
                         Text(
-                            "📱 Tap to open camera scanner",
-                            style = MaterialTheme.typography.titleMedium,
+                            "Scan Barcode",
+                            style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = Color(0xFF4A154B)
                         )
                         Text(
-                            "Supports QR codes, barcodes, and more",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            "Scan or enter barcode to track carpet cleaning",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color(0xFF8B0000)
                         )
                     }
                 }
             }
 
-            // Manual Entry
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            // Main Content
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        "Manual Entry",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = manualCode,
-                        onValueChange = { manualCode = it },
-                        label = { Text("Enter barcode") },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("e.g., CC123456789") },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = {
-                                    if (manualCode.isNotEmpty()) {
-                                        scannedCode = manualCode
-                                        if (isAssignMode) {
-                                            showAssignDialog = true
-                                        } else {
-                                            viewModel.scanBarcode(manualCode)
-                                            showScanResult = true
-                                        }
-                                    }
-                                }
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = "Process")
-                            }
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Button(
-                        onClick = {
-                            if (manualCode.isNotEmpty()) {
-                                scannedCode = manualCode
-                                if (isAssignMode) {
-                                    showAssignDialog = true
-                                } else {
-                                    viewModel.scanBarcode(manualCode)
-                                    showScanResult = true
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = manualCode.isNotEmpty() && !uiState.isLoading
-                    ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Processing...")
-                        } else {
-                            Text(if (isAssignMode) "Assign Barcode" else "Record Cleaning")
-                        }
-                    }
-                }
-            }
-
-            // Quick Test Buttons (for development)
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        "Quick Test",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                manualCode = "CC123456789"
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Sample Code")
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                manualCode = ""
-                                scannedCode = ""
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Clear")
-                        }
-                    }
-                }
-            }
-
-            // Show last scanned info if available
-            if (scannedCode.isNotEmpty()) {
+                // Mode Selection Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
+                        containerColor = Color(0xFFE8E4F0)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(20.dp)
                     ) {
                         Text(
-                            "✅ Last Scanned",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
+                            "Scan Mode",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4A154B)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            scannedCode,
+                            if (isAssignMode) "Assign new barcode tags to clients" else "Record cleaning service for existing clients",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            color = Color(0xFF2C3E50)
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = { isAssignMode = false },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (!isAssignMode) Color(0xFF4A154B) else Color.Transparent,
+                                    contentColor = if (!isAssignMode) Color.White else Color(0xFF4A154B)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    "Record Cleaning",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Button(
+                                onClick = { isAssignMode = true },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isAssignMode) Color(0xFF4A154B) else Color.Transparent,
+                                    contentColor = if (isAssignMode) Color.White else Color(0xFF4A154B)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    "Assign to Client",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
+
+                // Camera Scanner Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clickable {
+                            navController.navigate("camera_scanner/$isAssignMode")
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .background(
+                                        Color(0xFFE8E4F0),
+                                        RoundedCornerShape(12.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.CameraAlt,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
+                                    tint = Color(0xFF4A154B)
+                                )
+                            }
+                            Text(
+                                "📱 Tap to open camera scanner",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF4A154B)
+                            )
+                            Text(
+                                "Supports QR codes, barcodes, and more",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFF2C3E50)
+                            )
+                        }
+                    }
+                }
+
+                // Manual Entry Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = Color(0xFF8B0000),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Manual Entry",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF4A154B)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = manualCode,
+                            onValueChange = { manualCode = it },
+                            label = { Text("Enter barcode") },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("e.g., CC123456789") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF4A154B),
+                                focusedLabelColor = Color(0xFF4A154B),
+                                cursorColor = Color(0xFF4A154B)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        if (manualCode.isNotEmpty()) {
+                                            scannedCode = manualCode
+                                            if (isAssignMode) {
+                                                showAssignDialog = true
+                                            } else {
+                                                viewModel.scanBarcode(manualCode)
+                                                showScanResult = true
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "Process",
+                                        tint = Color(0xFF4A154B)
+                                    )
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                if (manualCode.isNotEmpty()) {
+                                    scannedCode = manualCode
+                                    if (isAssignMode) {
+                                        showAssignDialog = true
+                                    } else {
+                                        viewModel.scanBarcode(manualCode)
+                                        showScanResult = true
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            enabled = manualCode.isNotEmpty() && !uiState.isLoading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4A154B),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    "Processing...",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.QrCode,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    if (isAssignMode) "Assign Barcode" else "Record Cleaning",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Quick Test Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Text(
+                            "Quick Test",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4A154B)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    manualCode = "CC123456789"
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFF4A154B)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    "Sample Code",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    manualCode = ""
+                                    scannedCode = ""
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFF8B0000)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    "Clear",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Show last scanned info if available
+                if (scannedCode.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFE8E4F0)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Text(
+                                "✅ Last Scanned",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF4A154B)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                scannedCode,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF2C3E50)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -349,27 +471,31 @@ fun ScanBarcodeScreen(
                 Text(
                     "Assign Barcode to Client",
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4A154B)
                 )
             },
             text = {
                 Column {
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
+                            containerColor = Color(0xFFE8E4F0)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp)
+                            modifier = Modifier.padding(16.dp)
                         ) {
                             Text(
                                 "Barcode:",
-                                style = MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF4A154B)
                             )
                             Text(
                                 scannedCode,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2C3E50)
                             )
                         }
                     }
@@ -381,7 +507,20 @@ fun ScanBarcodeScreen(
                         onValueChange = { clientName = it },
                         label = { Text("Client Name") },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Enter client's full name") }
+                        placeholder = { Text("Enter client's full name") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color(0xFF4A154B)
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4A154B),
+                            focusedLabelColor = Color(0xFF4A154B),
+                            cursorColor = Color(0xFF4A154B)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -392,7 +531,20 @@ fun ScanBarcodeScreen(
                         label = { Text("Phone Number") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        placeholder = { Text("e.g., +254712345678") }
+                        placeholder = { Text("e.g., +254712345678") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Phone,
+                                contentDescription = null,
+                                tint = Color(0xFF4A154B)
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF4A154B),
+                            focusedLabelColor = Color(0xFF4A154B),
+                            cursorColor = Color(0xFF4A154B)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
             },
@@ -409,20 +561,38 @@ fun ScanBarcodeScreen(
                             Toast.makeText(context, "✅ Barcode assigned successfully!", Toast.LENGTH_SHORT).show()
                         }
                     },
-                    enabled = clientName.isNotEmpty() && clientPhone.isNotEmpty()
+                    enabled = clientName.isNotEmpty() && clientPhone.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4A154B),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Assign")
+                    Text(
+                        "Assign",
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showAssignDialog = false
-                    clientName = ""
-                    clientPhone = ""
-                }) {
-                    Text("Cancel")
+                TextButton(
+                    onClick = {
+                        showAssignDialog = false
+                        clientName = ""
+                        clientPhone = ""
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFF8B0000)
+                    )
+                ) {
+                    Text(
+                        "Cancel",
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-            }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -441,22 +611,35 @@ fun ScanBarcodeScreen(
                         if (result.isDiscountEligible) "🎉 Discount Eligible!" else "✅ Cleaning Recorded",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (result.isDiscountEligible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        color = if (result.isDiscountEligible) Color(0xFF4A154B) else Color(0xFF2C3E50)
                     )
                 },
                 text = {
                     Column {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                                containerColor = Color(0xFFE8E4F0)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(12.dp)
+                                modifier = Modifier.padding(16.dp)
                             ) {
-                                Text("Client: ${result.client.name}")
-                                Text("Phone: ${result.client.phoneNumber}")
-                                Text("Barcode: $scannedCode")
+                                Text(
+                                    "Client: ${result.client.name}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFF2C3E50)
+                                )
+                                Text(
+                                    "Phone: ${result.client.phoneNumber}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFF2C3E50)
+                                )
+                                Text(
+                                    "Barcode: $scannedCode",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFF2C3E50)
+                                )
                             }
                         }
 
@@ -465,24 +648,37 @@ fun ScanBarcodeScreen(
                         if (result.isDiscountEligible) {
                             Card(
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
+                                    containerColor = Color(0xFFE8E4F0)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(12.dp)
+                                    modifier = Modifier.padding(16.dp)
                                 ) {
                                     Text(
                                         "🎉 ${result.discountPercentage}% Discount Applied!",
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = Color(0xFF4A154B),
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Text("Scan count has been reset to 0")
+                                    Text(
+                                        "Scan count has been reset to 0",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF2C3E50)
+                                    )
                                 }
                             }
                         } else {
-                            Text("Scan count: ${result.scanCount}/10")
-                            Text("${10 - result.scanCount} more scans needed for discount")
+                            Text(
+                                "Scan count: ${result.scanCount}/10",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFF2C3E50)
+                            )
+                            Text(
+                                "${10 - result.scanCount} more scans needed for discount",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFF2C3E50)
+                            )
                         }
                     }
                 },
@@ -493,11 +689,21 @@ fun ScanBarcodeScreen(
                             viewModel.clearScanResult()
                             manualCode = ""
                             scannedCode = ""
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4A154B),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("OK")
+                        Text(
+                            "OK",
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-                }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
             )
         }
     }

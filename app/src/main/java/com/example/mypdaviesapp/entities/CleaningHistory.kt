@@ -23,5 +23,6 @@ data class CleaningHistory(
     val barcodeId: String,
     val cleaningDate: Long = System.currentTimeMillis(),
     val discountApplied: Boolean = false,
-    val discountPercentage: Int = 0
+    val discountPercentage: Int = 0,
+    val updatedAt: Long = System.currentTimeMillis()
 )

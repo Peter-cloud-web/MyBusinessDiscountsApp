@@ -12,5 +12,6 @@ data class Client(
     val totalCleanings: Int = 0,
     val discountsUsed: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
-    val lastVisit: Long = System.currentTimeMillis()
+    val lastVisit: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
 )

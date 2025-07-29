@@ -11,5 +11,6 @@ data class Barcode(
     val scanCount: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val assignedAt: Long? = null,
-    val lastScanned: Long? = null
+    val lastScanned: Long? = null,
+    val updatedAt: Long = System.currentTimeMillis()
 )

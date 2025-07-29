@@ -28,6 +28,8 @@ import androidx.navigation.NavController
 import com.example.mypdaviesapp.ui.components.ActionCard
 import com.example.mypdaviesapp.ui.components.ClientListItem
 import com.example.mypdaviesapp.viewmodel.MainViewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,186 +41,221 @@ fun HomeScreen(
     val clients by viewModel.clients.collectAsState()
     val unassignedBarcodes by viewModel.unassignedBarcodes.collectAsState()
 
+    // SwipeRefresh state
+    val swipeRefreshState = rememberSwipeRefreshState(
+        isRefreshing = uiState.isLoading
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FA))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-                .verticalScroll(rememberScrollState())
-                .padding(10.dp)
+        SwipeRefresh(
+            state = swipeRefreshState,
+            onRefresh = {
+                viewModel.pullFromCloud()
+            },
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Header with gradient background
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = 24.dp, vertical = 32.dp)
-            ) {
-                Column {
-                    Text(
-                        "Welcome Back",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4A154B)
-                    )
-                    Text(
-                        "Here's your business overview",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF8B0000)
-                    )
-                }
-            }
-
-            // Enhanced Stats Cards
             Column(
-                modifier = Modifier.padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .verticalScroll(rememberScrollState())
+                    .padding(10.dp)
             ) {
-                // Primary Stats Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // Header with gradient background
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .padding(horizontal = 24.dp, vertical = 32.dp)
                 ) {
-                    ProfessionalStatCard(
-                        title = "Total Clients",
-                        value = clients.size.toString(),
-                        subtitle = "Active customers",
-                        icon = Icons.Default.People,
-                        modifier = Modifier.weight(1f)
-                    )
-                    ProfessionalStatCard(
-                        title = "Unassigned Tags",
-                        value = unassignedBarcodes.size.toString(),
-                        subtitle = "Available tags",
-                        icon = Icons.Default.QrCode,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                // Secondary Stats
-                ProfessionalStatCard(
-                    title = "Active Loyalty Members",
-                    value = clients.count { it.totalCleanings >= 10 }.toString(),
-                    subtitle = "Customers eligible for discounts",
-                    icon = Icons.Default.TrendingUp,
-                    modifier = Modifier.fillMaxWidth(),
-                    isHighlighted = true
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Section Header
-                Text(
-                    "Quick Actions",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4A154B),
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-
-                // Enhanced Action Grid
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.height(280.dp)
-                ) {
-                    item {
-                        ProfessionalActionCard(
-                            title = "Generate Barcodes",
-                            description = "Create new barcode tags",
-                            icon = Icons.Default.QrCode,
-                            onClick = { navController.navigate("generate_barcodes") }
+                    Column {
+                        Text(
+                            "Welcome Back",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4A154B)
                         )
-                    }
-                    item {
-                        ProfessionalActionCard(
-                            title = "Scan Barcode",
-                            description = "Scan carpet tags",
-                            icon = Icons.Default.CameraAlt,
-                            onClick = { navController.navigate("scan_barcode") }
+                        Text(
+                            "Here's your business overview",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color(0xFF8B0000)
                         )
-                    }
-                    item {
-                        ProfessionalActionCard(
-                            title = "Client Management",
-                            description = "Manage profiles",
-                            icon = Icons.Default.People,
-                            onClick = { navController.navigate("clients") }
-                        )
-                    }
-                    item {
-                        ProfessionalActionCard(
-                            title = "Analytics",
-                            description = "View reports",
-                            icon = Icons.Default.Analytics,
-                            onClick = { /* TODO: Navigate to reports */ }
-                        )
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Recent Activity Section
-                if (clients.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp)
-                        ) {
+                        // Add sync status indicator
+                        if (uiState.isLoading) {
+                            Spacer(modifier = Modifier.height(8.dp))
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "Recent Clients",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
                                     color = Color(0xFF4A154B)
                                 )
-                                TextButton(
-                                    onClick = { navController.navigate("clients") }
-                                ) {
-                                    Text("View All")
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            clients.take(3).forEach { client ->
-                                ClientListItem(
-                                    client = client,
-                                    onClick = { navController.navigate("client_detail/${client.id}") }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Syncing data...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF8B0000)
                                 )
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                // Enhanced Stats Cards
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Primary Stats Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ProfessionalStatCard(
+                            title = "Total Clients",
+                            value = clients.size.toString(),
+                            subtitle = "Active customers",
+                            icon = Icons.Default.People,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ProfessionalStatCard(
+                            title = "Unassigned Tags",
+                            value = unassignedBarcodes.size.toString(),
+                            subtitle = "Available tags",
+                            icon = Icons.Default.QrCode,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // Secondary Stats
+                    ProfessionalStatCard(
+                        title = "Active Loyalty Members",
+                        value = clients.count { it.totalCleanings >= 10 }.toString(),
+                        subtitle = "Customers eligible for discounts",
+                        icon = Icons.Default.TrendingUp,
+                        modifier = Modifier.fillMaxWidth(),
+                        isHighlighted = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Section Header
+                    Text(
+                        "Quick Actions",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4A154B),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    // Enhanced Action Grid
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.height(280.dp)
+                    ) {
+                        item {
+                            ProfessionalActionCard(
+                                title = "Generate Barcodes",
+                                description = "Create new barcode tags",
+                                icon = Icons.Default.QrCode,
+                                onClick = { navController.navigate("generate_barcodes") }
+                            )
+                        }
+                        item {
+                            ProfessionalActionCard(
+                                title = "Scan Barcode",
+                                description = "Scan carpet tags",
+                                icon = Icons.Default.CameraAlt,
+                                onClick = { navController.navigate("scan_barcode") }
+                            )
+                        }
+                        item {
+                            ProfessionalActionCard(
+                                title = "Client Management",
+                                description = "Manage profiles",
+                                icon = Icons.Default.People,
+                                onClick = { navController.navigate("clients") }
+                            )
+                        }
+                        item {
+                            ProfessionalActionCard(
+                                title = "Analytics",
+                                description = "View reports",
+                                icon = Icons.Default.Analytics,
+                                onClick = { /* TODO: Navigate to reports */ }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Recent Activity Section
+                    if (clients.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Recent Clients",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF4A154B)
+                                    )
+                                    TextButton(
+                                        onClick = { navController.navigate("clients") }
+                                    ) {
+                                        Text("View All")
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                clients.take(3).forEach { client ->
+                                    ClientListItem(
+                                        client = client,
+                                        onClick = { navController.navigate("client_detail/${client.id}") }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
         }
 
-        // Handle messages
+        // Show success/error messages as snackbars
         uiState.message?.let { message ->
             LaunchedEffect(message) {
+                // You can show a snackbar here if needed
                 viewModel.clearMessage()
             }
         }
 
         uiState.error?.let { error ->
             LaunchedEffect(error) {
+                // You can show an error snackbar here if needed
                 viewModel.clearMessage()
             }
         }

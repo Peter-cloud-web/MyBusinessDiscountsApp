@@ -9,12 +9,24 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.mypdaviesapp.nav.CarpetCleaningApp
 import com.example.mypdaviesapp.ui.theme.CarpetCleaningTheme
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val db = FirebaseFirestore.getInstance()
+        db.collection("test").document("testDoc")
+            .set(hashMapOf("hello" to "world"))
+            .addOnSuccessListener {
+                println("✅ Firestore write test OK")
+            }
+            .addOnFailureListener {
+                println("❌ Firestore write test FAILED: ${it.message}")
+            }
+
         setContent {
             CarpetCleaningTheme {
                 Surface (

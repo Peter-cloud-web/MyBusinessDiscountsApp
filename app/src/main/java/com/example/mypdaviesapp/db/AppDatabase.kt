@@ -13,7 +13,7 @@ import com.example.mypdaviesapp.entities.Client
 
 @Database(
     entities = [Client::class, Barcode::class, CleaningHistory::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
