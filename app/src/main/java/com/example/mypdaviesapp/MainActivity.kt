@@ -17,16 +17,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val db = FirebaseFirestore.getInstance()
-        db.collection("test").document("testDoc")
-            .set(hashMapOf("hello" to "world"))
-            .addOnSuccessListener {
-                println("✅ Firestore write test OK")
-            }
-            .addOnFailureListener {
-                println("❌ Firestore write test FAILED: ${it.message}")
-            }
-
         setContent {
             CarpetCleaningTheme {
                 Surface (

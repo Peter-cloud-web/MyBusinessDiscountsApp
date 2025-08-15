@@ -1,11 +1,16 @@
 package com.example.mypdaviesapp.di
 
+import com.example.mypdaviesapp.repo.SyncManager
 import android.content.Context
 import androidx.room.Room
+import com.example.mypdaviesapp.dao.AppMetadataDao
 import com.example.mypdaviesapp.dao.BarcodeDao
 import com.example.mypdaviesapp.dao.CleaningHistoryDao
 import com.example.mypdaviesapp.dao.ClientDao
 import com.example.mypdaviesapp.db.AppDatabase
+import com.example.mypdaviesapp.repo.CarpetCleaningRepository
+import com.example.mypdaviesapp.repo.MetadataManager
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,6 +35,20 @@ object DatabaseModule {
     }
 
     @Provides
+    fun provideMetadataDao(database: AppDatabase): AppMetadataDao {
+        return database.appMetadataDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMetadataManager(
+        metadataDao: AppMetadataDao,
+        firestore: FirebaseFirestore
+    ): MetadataManager {
+        return MetadataManager(metadataDao, firestore)
+    }
+
+    @Provides
     fun provideClientDao(database: AppDatabase): ClientDao = database.clientDao()
 
     @Provides
@@ -37,4 +56,13 @@ object DatabaseModule {
 
     @Provides
     fun provideCleaningHistoryDao(database: AppDatabase): CleaningHistoryDao = database.cleaningHistoryDao()
+
+    @Provides
+    @Singleton
+    fun provideSyncManager(
+        repository: CarpetCleaningRepository,
+        metadataManager: MetadataManager
+    ): SyncManager {
+        return SyncManager(repository, metadataManager)
+    }
 }

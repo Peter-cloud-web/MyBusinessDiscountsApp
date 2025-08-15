@@ -1,9 +1,13 @@
 package com.example.mypdaviesapp.viewmodel
 
+
+import com.example.mypdaviesapp.repo.SyncManager
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mypdaviesapp.entities.AppMetadata
 import com.example.mypdaviesapp.repo.CarpetCleaningRepository
-import com.example.mypdaviesapp.repo.SyncManager
+import com.example.mypdaviesapp.repo.MetadataManager
 import com.example.mypdaviesapp.states.MainUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     val repository: CarpetCleaningRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val metadataManager: MetadataManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -37,16 +42,39 @@ class MainViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    private val _generatedBarcodesCount = MutableStateFlow(0)
+    val generatedBarcodesCount = _generatedBarcodesCount.asStateFlow()
+
+    private val _totalClientsCount = MutableStateFlow(0)
+    val totalClientsCount = _totalClientsCount.asStateFlow()
+
+    private val _lastSyncTime = MutableStateFlow(0L)
+    val lastSyncTime = _lastSyncTime.asStateFlow()
+
+
     init {
-        // Auto-sync on app startup
+        // Initialize metadata and perform startup sync
         viewModelScope.launch {
             try {
+                println("🔧 Initializing app metadata...")
+                metadataManager.performInitialMetadataSetup()
+
+                // Load initial metadata values
+                loadMetadataValues()
+
                 println("🚀 Auto-syncing on startup...")
                 syncManager.syncAll()
+
+                // Update metadata after sync
+                loadMetadataValues()
+                updateLastSyncTime()
+
                 println("✅ Auto-sync completed")
             } catch (e: Exception) {
-                println("❌ Auto-sync failed: ${e.message}")
-                // Don't show error to user for auto-sync
+                println("❌ Startup initialization failed: ${e.message}")
+                _uiState.update {
+                    it.copy(error = "Startup sync failed. Please pull to refresh.")
+                }
             }
         }
     }
@@ -57,8 +85,13 @@ class MainViewModel @Inject constructor(
             try {
                 val codes = repository.generateBarcodes(count)
 
+                // Update local metadata count
+                val newCount = metadataManager.getGeneratedBarcodesCount()
+                _generatedBarcodesCount.value = newCount
+
                 // Push immediately to cloud
                 syncManager.syncBarcodes()
+                syncManager.syncMetadata()
 
                 _uiState.update {
                     it.copy(
@@ -77,6 +110,28 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private suspend fun loadMetadataValues() {
+        try {
+            val generatedCount = metadataManager.getGeneratedBarcodesCount()
+            val clientsCount = metadataManager.getTotalClientsCount()
+            val lastSync = metadataManager.getMetadata(AppMetadata.LAST_SYNC_TIMESTAMP)?.toLongOrNull() ?: 0L
+
+            _generatedBarcodesCount.value = generatedCount
+            _totalClientsCount.value = clientsCount
+            _lastSyncTime.value = lastSync
+
+            println("📊 Loaded metadata - Generated: $generatedCount, Clients: $clientsCount")
+        } catch (e: Exception) {
+            println("⚠️ Failed to load metadata: ${e.message}")
+        }
+    }
+
+    private suspend fun updateLastSyncTime() {
+        val currentTime = System.currentTimeMillis()
+        metadataManager.setMetadata(AppMetadata.LAST_SYNC_TIMESTAMP, currentTime.toString())
+        _lastSyncTime.value = currentTime
+    }
+
     fun assignBarcode(barcodeCode: String, clientName: String, phoneNumber: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -86,8 +141,12 @@ class MainViewModel @Inject constructor(
                     try {
                         syncManager.syncClients()
                         syncManager.syncBarcodes()
+                        syncManager.syncMetadata()
+
+                        // Update local metadata
+                        loadMetadataValues()
                     } catch (e: Exception) {
-                        // Continue even if sync fails
+                        println("⚠️ Post-assignment sync failed: ${e.message}")
                     }
 
                     _uiState.update {
@@ -112,10 +171,29 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                // Ensure metadata is synced first for proper app state
+                metadataManager.syncMetadataFromCloud()
+
+                // Then sync all data
                 syncManager.syncAll()
-                _uiState.update { it.copy(isLoading = false, message = "✅ Sync completed!") }
+
+                // Update local metadata values
+                loadMetadataValues()
+                updateLastSyncTime()
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        message = "✅ Sync completed! All data is up to date."
+                    )
+                }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = "❌ Sync failed: ${e.message}") }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "❌ Sync failed: ${e.message}"
+                    )
+                }
             }
         }
     }
@@ -130,8 +208,12 @@ class MainViewModel @Inject constructor(
                         syncManager.syncClients()
                         syncManager.syncBarcodes()
                         syncManager.syncHistory()
+                        syncManager.syncMetadata()
+
+                        // Update metadata
+                        loadMetadataValues()
                     } catch (e: Exception) {
-                        // Continue even if sync fails
+                        println("⚠️ Post-scan sync failed: ${e.message}")
                     }
 
                     _uiState.update {
@@ -154,6 +236,44 @@ class MainViewModel @Inject constructor(
                         )
                     }
                 }
+        }
+    }
+
+    fun refreshMetadata() {
+        viewModelScope.launch {
+            try {
+                loadMetadataValues()
+                _uiState.update {
+                    it.copy(message = "Metadata refreshed")
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(error = "Failed to refresh metadata: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun syncMetadataToCloud() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                metadataManager.syncMetadataToCloud()
+                updateLastSyncTime()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        message = "Metadata synced to cloud"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Failed to sync metadata: ${e.message}"
+                    )
+                }
+            }
         }
     }
 

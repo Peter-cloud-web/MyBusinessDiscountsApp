@@ -14,11 +14,15 @@ interface ClientDao {
     @Query("SELECT * FROM clients ORDER BY name ASC")
     fun getAllClients(): Flow<List<Client>>
 
+    @Query("SELECT COUNT(*) FROM clients")
+    suspend fun getClientCount(): Int
+
     @Query("SELECT * FROM clients WHERE id = :id")
     suspend fun getClientById(id: String): Client?
 
-    @Query("SELECT * FROM clients WHERE phoneNumber = :phoneNumber")
-    suspend fun getClientByPhone(phoneNumber: String): Client?
+    @Query("SELECT * FROM clients WHERE phoneNumber = :phoneNumber LIMIT 1")
+    suspend fun getClientByPhoneNumber(phoneNumber: String): Client?
+
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertClient(client: Client)

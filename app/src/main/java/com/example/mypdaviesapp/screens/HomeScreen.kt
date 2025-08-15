@@ -10,9 +10,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,6 +43,11 @@ fun HomeScreen(
     val clients by viewModel.clients.collectAsState()
     val unassignedBarcodes by viewModel.unassignedBarcodes.collectAsState()
 
+    // Add states for metadata
+    val generatedBarcodesCount by viewModel.generatedBarcodesCount.collectAsState()
+    val totalClientsCount by viewModel.totalClientsCount.collectAsState()
+    val lastSyncTime by viewModel.lastSyncTime.collectAsState()
+
     // SwipeRefresh state
     val swipeRefreshState = rememberSwipeRefreshState(
         isRefreshing = uiState.isLoading
@@ -65,7 +72,7 @@ fun HomeScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(10.dp)
             ) {
-                // Header with gradient background
+                // Header with sync status
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -85,12 +92,12 @@ fun HomeScreen(
                             color = Color(0xFF8B0000)
                         )
 
-                        // Add sync status indicator
-                        if (uiState.isLoading) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                        // Enhanced sync status
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (uiState.isLoading) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
@@ -102,12 +109,25 @@ fun HomeScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color(0xFF8B0000)
                                 )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Cloud,
+                                    contentDescription = "Synced",
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Last sync: ${formatSyncTime(lastSyncTime)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF4CAF50)
+                                )
                             }
                         }
                     }
                 }
 
-                // Enhanced Stats Cards
+                // Enhanced Stats Cards with metadata
                 Column(
                     modifier = Modifier.padding(horizontal = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -122,7 +142,8 @@ fun HomeScreen(
                             value = clients.size.toString(),
                             subtitle = "Active customers",
                             icon = Icons.Default.People,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            additionalInfo = "Stored: $totalClientsCount"
                         )
                         ProfessionalStatCard(
                             title = "Unassigned Tags",
@@ -133,19 +154,62 @@ fun HomeScreen(
                         )
                     }
 
-                    // Secondary Stats
-                    ProfessionalStatCard(
-                        title = "Active Loyalty Members",
-                        value = clients.count { it.totalCleanings >= 10 }.toString(),
-                        subtitle = "Customers eligible for discounts",
-                        icon = Icons.Default.TrendingUp,
+                    // Secondary Stats with more detailed info
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        isHighlighted = true
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ProfessionalStatCard(
+                            title = "Generated Barcodes",
+                            value = generatedBarcodesCount.toString(),
+                            subtitle = "Total created",
+                            icon = Icons.Default.QrCode,
+                            modifier = Modifier.weight(1f),
+                            isHighlighted = true
+                        )
+                        ProfessionalStatCard(
+                            title = "Loyalty Members",
+                            value = clients.count { it.totalCleanings >= 10 }.toString(),
+                            subtitle = "Eligible for discounts",
+                            icon = Icons.Default.TrendingUp,
+                            modifier = Modifier.weight(1f),
+                            isHighlighted = true
+                        )
+                    }
+
+                    // Data consistency check alert
+                    if (clients.size != totalClientsCount && totalClientsCount > 0) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFFF3CD)
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = "Warning",
+                                    tint = Color(0xFF856404),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Data sync may be incomplete. Pull to refresh.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF856404)
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Section Header
+                    // Rest of your existing UI...
                     Text(
                         "Quick Actions",
                         style = MaterialTheme.typography.titleLarge,
@@ -154,7 +218,7 @@ fun HomeScreen(
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
 
-                    // Enhanced Action Grid
+                    // Action Grid (unchanged)
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -195,10 +259,9 @@ fun HomeScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Recent Activity Section
+                    // Recent clients section (unchanged)
                     if (clients.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
@@ -245,23 +308,22 @@ fun HomeScreen(
             }
         }
 
-        // Show success/error messages as snackbars
+        // Show messages
         uiState.message?.let { message ->
             LaunchedEffect(message) {
-                // You can show a snackbar here if needed
                 viewModel.clearMessage()
             }
         }
 
         uiState.error?.let { error ->
             LaunchedEffect(error) {
-                // You can show an error snackbar here if needed
                 viewModel.clearMessage()
             }
         }
     }
 }
 
+// Updated ProfessionalStatCard with additional info
 @Composable
 fun ProfessionalStatCard(
     title: String,
@@ -269,7 +331,8 @@ fun ProfessionalStatCard(
     subtitle: String,
     icon: ImageVector,
     modifier: Modifier = Modifier,
-    isHighlighted: Boolean = false
+    isHighlighted: Boolean = false,
+    additionalInfo: String? = null
 ) {
     Card(
         modifier = modifier,
@@ -323,6 +386,16 @@ fun ProfessionalStatCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF95A5A6)
             )
+
+            // Show additional info if provided
+            additionalInfo?.let { info ->
+                Text(
+                    info,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF6C757D),
+                    fontWeight = FontWeight.Light
+                )
+            }
         }
     }
 }
@@ -386,5 +459,20 @@ fun ProfessionalActionCard(
                 }
             }
         }
+    }
+}
+
+// Helper function to format sync time
+private fun formatSyncTime(timestamp: Long): String {
+    if (timestamp == 0L) return "Never"
+
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+
+    return when {
+        diff < 60_000 -> "Just now"
+        diff < 3_600_000 -> "${diff / 60_000} min ago"
+        diff < 86_400_000 -> "${diff / 3_600_000} hr ago"
+        else -> "${diff / 86_400_000} days ago"
     }
 }

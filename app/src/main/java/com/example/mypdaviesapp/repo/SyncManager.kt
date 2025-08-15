@@ -1,53 +1,100 @@
 package com.example.mypdaviesapp.repo
-
-import com.example.mypdaviesapp.entities.*
+import com.example.mypdaviesapp.entities.Barcode
+import com.example.mypdaviesapp.entities.CleaningHistory
+import com.example.mypdaviesapp.entities.Client
 import com.example.mypdaviesapp.repo.CarpetCleaningRepository
+import com.example.mypdaviesapp.repo.MetadataManager
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+// 3. Fixed SyncManager with proper error handling and debugging
 @Singleton
 class SyncManager @Inject constructor(
-    private val repository: CarpetCleaningRepository
+    private val repository: CarpetCleaningRepository,
+    private val metadataManager: MetadataManager
 ) {
     private val firestore = FirebaseFirestore.getInstance()
 
     suspend fun syncAll() {
-        syncClients()
-        syncBarcodes()
-        syncHistory()
+        println("🔄 Starting complete sync...")
+        try {
+            // First sync metadata from cloud (important for fresh installs)
+            println("📊 Syncing metadata from cloud...")
+            metadataManager.syncMetadataFromCloud()
+
+            // Then sync all data
+            println("👥 Syncing clients...")
+            syncClients()
+
+            println("🏷️ Syncing barcodes...")
+            syncBarcodes()
+
+            println("📜 Syncing history...")
+            syncHistory()
+
+            // Finally sync metadata to cloud (in case local data was newer)
+            println("📊 Syncing metadata to cloud...")
+            metadataManager.syncMetadataToCloud()
+
+            println("✅ Complete sync finished successfully")
+        } catch (e: Exception) {
+            println("❌ Sync failed: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
     }
 
     suspend fun syncClients() {
         try {
+            println("👥 Starting client sync...")
+
+            // Get cloud data
             val cloudSnapshot = firestore.collection("clients").get().await()
             val cloudClients = cloudSnapshot.documents.mapNotNull { doc ->
-                doc.toObject(Client::class.java)?.copy(id = doc.id)
+                try {
+                    val data = doc.data ?: return@mapNotNull null
+                    Client(
+                        id = doc.id,
+                        name = data["name"] as? String ?: "",
+                        phoneNumber = data["phoneNumber"] as? String ?: "",
+                        totalCleanings = (data["totalCleanings"] as? Long)?.toInt() ?: 0,
+                        discountsUsed = (data["discountsUsed"] as? Long)?.toInt() ?: 0,
+                        createdAt = data["createdAt"] as? Long ?: System.currentTimeMillis(),
+                        lastVisit = data["lastVisit"] as? Long ?: System.currentTimeMillis(),
+                        updatedAt = data["updatedAt"] as? Long ?: System.currentTimeMillis()
+                    )
+                } catch (e: Exception) {
+                    println("⚠️ Failed to parse client ${doc.id}: ${e.message}")
+                    null
+                }
             }
+
+            // Get local data
             val localClients = repository.getAllClients().first()
 
-            println("🔄 Syncing clients: Cloud=${cloudClients.size}, Local=${localClients.size}")
+            println("📊 Client counts - Cloud: ${cloudClients.size}, Local: ${localClients.size}")
 
-            // Sync cloud -> local (prioritize cloud data for fresh installs)
+            // Sync cloud -> local
             for (cloudClient in cloudClients) {
                 val local = localClients.find { it.id == cloudClient.id }
                 when {
                     local == null -> {
-                        // New client from cloud - insert directly without updating timestamp
-                        println("📥 Inserting client from cloud: ${cloudClient.name}")
+                        println("📥 Inserting new client from cloud: ${cloudClient.name}")
                         repository.insertClientFromSync(cloudClient)
                     }
                     cloudClient.updatedAt > local.updatedAt -> {
-                        // Cloud version is newer
-                        println("🔄 Updating client from cloud: ${cloudClient.name}")
+                        println("🔄 Updating client from cloud: ${cloudClient.name} (cloud: ${cloudClient.updatedAt} > local: ${local.updatedAt})")
                         repository.updateClientFromSync(cloudClient)
                     }
                     local.updatedAt > cloudClient.updatedAt -> {
-                        // Local version is newer - push to cloud
-                        println("📤 Pushing local client to cloud: ${local.name}")
+                        println("📤 Local client newer, pushing to cloud: ${local.name}")
                         pushClient(local)
+                    }
+                    else -> {
+                        println("✅ Client in sync: ${local.name}")
                     }
                 }
             }
@@ -60,21 +107,42 @@ class SyncManager @Inject constructor(
                     pushClient(localClient)
                 }
             }
+
+            println("✅ Client sync completed")
         } catch (e: Exception) {
             println("❌ Failed to sync clients: ${e.message}")
+            e.printStackTrace()
             throw Exception("Failed to sync clients: ${e.message}")
         }
     }
 
     suspend fun syncBarcodes() {
         try {
+            println("🏷️ Starting barcode sync...")
+
             val cloudSnapshot = firestore.collection("barcodes").get().await()
             val cloudBarcodes = cloudSnapshot.documents.mapNotNull { doc ->
-                doc.toObject(Barcode::class.java)?.copy(code = doc.id)
+                try {
+                    val data = doc.data ?: return@mapNotNull null
+                    Barcode(
+                        code = doc.id,
+                        clientId = data["clientId"] as? String,
+                        isAssigned = data["isAssigned"] as? Boolean ?: false,
+                        scanCount = (data["scanCount"] as? Long)?.toInt() ?: 0,
+                        createdAt = data["createdAt"] as? Long ?: System.currentTimeMillis(),
+                        assignedAt = data["assignedAt"] as? Long,
+                        lastScanned = data["lastScanned"] as? Long,
+                        updatedAt = data["updatedAt"] as? Long ?: System.currentTimeMillis()
+                    )
+                } catch (e: Exception) {
+                    println("⚠️ Failed to parse barcode ${doc.id}: ${e.message}")
+                    null
+                }
             }
-            val localBarcodes = repository.getAllBarcodes().first()
 
-            println("🔄 Syncing barcodes: Cloud=${cloudBarcodes.size}, Local=${localBarcodes.size}")
+            val localBarcodes = repository.getAllBarcodesAsList()
+
+            println("📊 Barcode counts - Cloud: ${cloudBarcodes.size}, Local: ${localBarcodes.size}")
 
             // Sync cloud -> local
             for (cloudBarcode in cloudBarcodes) {
@@ -103,22 +171,42 @@ class SyncManager @Inject constructor(
                     pushBarcode(localBarcode)
                 }
             }
+
+            println("✅ Barcode sync completed")
         } catch (e: Exception) {
             println("❌ Failed to sync barcodes: ${e.message}")
+            e.printStackTrace()
             throw Exception("Failed to sync barcodes: ${e.message}")
         }
     }
 
     suspend fun syncHistory() {
         try {
-            // Fixed: Use consistent collection name
+            println("📜 Starting history sync...")
+
             val cloudSnapshot = firestore.collection("cleaning_history").get().await()
             val cloudHistory = cloudSnapshot.documents.mapNotNull { doc ->
-                doc.toObject(CleaningHistory::class.java)?.copy(id = doc.id)
+                try {
+                    val data = doc.data ?: return@mapNotNull null
+                    CleaningHistory(
+                        id = doc.id,
+                        clientId = data["clientId"] as? String ?: "",
+                        barcodeId = data["barcodeId"] as? String ?: "",
+                        cleaningDate = data["cleaningDate"] as? Long ?: System.currentTimeMillis(),
+                        discountApplied = data["discountApplied"] as? Boolean ?: false,
+                        discountPercentage = (data["discountPercentage"] as? Long)?.toInt() ?: 0,
+                        updatedAt = data["updatedAt"] as? Long ?: System.currentTimeMillis()
+                    )
+                } catch (e: Exception) {
+                    println("⚠️ Failed to parse history ${doc.id}: ${e.message}")
+                    null
+                }
             }
-            val localHistory = repository.getAllHistory().first()
 
-            println("🔄 Syncing history: Cloud=${cloudHistory.size}, Local=${localHistory.size}")
+            val localHistory = repository.getAllHistoryAsList().first()
+
+            // FIXED: Use .size (property) instead of .size()
+            println("📊 History counts - Cloud: ${cloudHistory.size}, Local: ${localHistory.size}")
 
             // Sync cloud -> local
             for (cloudRecord in cloudHistory) {
@@ -147,43 +235,93 @@ class SyncManager @Inject constructor(
                     pushHistory(localRecord)
                 }
             }
+
+            println("✅ History sync completed")
         } catch (e: Exception) {
             println("❌ Failed to sync history: ${e.message}")
+            e.printStackTrace()
             throw Exception("Failed to sync history: ${e.message}")
         }
     }
 
     private suspend fun pushClient(client: Client) {
-        firestore.collection("clients")
-            .document(client.id)
-            .set(client)
-            .await()
+        try {
+            val data = mapOf(
+                "name" to client.name,
+                "phoneNumber" to client.phoneNumber,
+                "totalCleanings" to client.totalCleanings,
+                "discountsUsed" to client.discountsUsed,
+                "createdAt" to client.createdAt,
+                "lastVisit" to client.lastVisit,
+                "updatedAt" to client.updatedAt
+            )
+
+            firestore.collection("clients")
+                .document(client.id)
+                .set(data)
+                .await()
+
+            println("✅ Successfully pushed client ${client.name} to cloud")
+        } catch (e: Exception) {
+            println("❌ Failed to push client ${client.name}: ${e.message}")
+            throw e
+        }
     }
 
     private suspend fun pushBarcode(barcode: Barcode) {
-        firestore.collection("barcodes")
-            .document(barcode.code)
-            .set(barcode)
-            .await()
+        try {
+            val data = mapOf(
+                "clientId" to barcode.clientId,
+                "isAssigned" to barcode.isAssigned,
+                "scanCount" to barcode.scanCount,
+                "createdAt" to barcode.createdAt,
+                "assignedAt" to barcode.assignedAt,
+                "lastScanned" to barcode.lastScanned,
+                "updatedAt" to barcode.updatedAt
+            )
+
+            firestore.collection("barcodes")
+                .document(barcode.code)
+                .set(data)
+                .await()
+
+            println("✅ Successfully pushed barcode ${barcode.code} to cloud")
+        } catch (e: Exception) {
+            println("❌ Failed to push barcode ${barcode.code}: ${e.message}")
+            throw e
+        }
     }
 
     private suspend fun pushHistory(history: CleaningHistory) {
-        firestore.collection("cleaning_history")
-            .document(history.id)
-            .set(history)
-            .await()
+        try {
+            val data = mapOf(
+                "clientId" to history.clientId,
+                "barcodeId" to history.barcodeId,
+                "cleaningDate" to history.cleaningDate,
+                "discountApplied" to history.discountApplied,
+                "discountPercentage" to history.discountPercentage,
+                "updatedAt" to history.updatedAt
+            )
+
+            firestore.collection("cleaning_history")
+                .document(history.id)
+                .set(data)
+                .await()
+
+            println("✅ Successfully pushed history ${history.id} to cloud")
+        } catch (e: Exception) {
+            println("❌ Failed to push history ${history.id}: ${e.message}")
+            throw e
+        }
     }
 
-    // Optional: Manual push methods for immediate sync
-    suspend fun pushClientToCloud(client: Client) {
-        pushClient(client)
-    }
-
-    suspend fun pushBarcodeToCloud(barcode: Barcode) {
-        pushBarcode(barcode)
-    }
-
-    suspend fun pushHistoryToCloud(history: CleaningHistory) {
-        pushHistory(history)
+    suspend fun syncMetadata() {
+        try {
+            metadataManager.syncMetadataToCloud()
+            metadataManager.syncMetadataFromCloud()
+        } catch (e: Exception) {
+            println("❌ Metadata sync failed: ${e.message}")
+            throw e
+        }
     }
 }
